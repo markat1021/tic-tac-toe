@@ -1,0 +1,10 @@
+#tic-tac-toe {
+  display: grid;
+  grid-template-rows: 50px 50px 50px;
+  grid-template-columns: 50px 50px 50px;
+}
+#tic-tac-toe img {
+  height:40px;
+  width:40px;
+  padding:5px;
+}

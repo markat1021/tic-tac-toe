@@ -7,14 +7,13 @@ let player2;
 const mainDiv = document.querySelector("main");
 
 
-
-
 //============================
 // Game Flow module
 //============================
 gameFlow = (function() {
+  let lastGame = null; //string 
   let playerTurn = null; //boolean true=player1
-  let isGameOver = false; 
+  let gameOverStatus = false; 
   let isWinner = null; 
 
   // makes sure two players are available
@@ -22,16 +21,22 @@ gameFlow = (function() {
 
   // get current player
   const currentPlayer = function () { 
-    return playerTurn 
+    return playerTurn;
   }
 
-  const gameOver = function (winner) { 
-    isGameOver = true; 
-    isWinner = winner;
+  const isGameOver = function() {
+    return gameOverStatus;
+  }
+  const gameOver = function (winnerStr) { 
+    gameOverStatus = true; 
+    isWinner = winnerStr;
+    // if (typeStr == "win") {
+    //   lastGameResult = typeStr;
+    // }
   }
 
   const gameReset = function () { 
-    isGameOver = false; 
+    gameOverStatus = false; 
     playerTurn = true;
     isWinner = null;
   }
@@ -45,8 +50,13 @@ gameFlow = (function() {
     }
   }
 
+  const getLastGameResult = function(){
+    return lastGame;
+  }
 
-  return { nextPlayer, currentPlayer, gameOver, gameReset, isGameOver };
+
+  return { nextPlayer, currentPlayer, gameOver, gameReset, isGameOver,
+            getLastGameResult };
 })();
 
 
@@ -57,11 +67,10 @@ gameBoard = (function() {
   let lastmove = null; //indicate if last move was success
   let board = [[null,null,null],[null,null,null],[null,null,null]]; 
 
-
   const addMove = function (rowInt, colInt) {
     let move = gameFlow.currentPlayer();
     let curr = board[rowInt][colInt];
-    if (gameFlow.isGameOver) {
+    if (gameFlow.isGameOver()) {
       return;
     }
 
@@ -70,11 +79,13 @@ gameBoard = (function() {
       board[rowInt][colInt] = move;
       lastmove = true;
       if (checkWinCondition()) { // check win
-        gameFlow.gameOver();
+        gameFlow.gameOver(move);
         render();
+        console.log(move+", "+helper.getString("gameOver"));
         return (move+", "+helper.getString("gameOver"));
       } else {  // no winner, so next player
         gameFlow.nextPlayer();
+        render();
         return helper.getString("success"); 
       }
 
@@ -88,31 +99,54 @@ gameBoard = (function() {
 
   const checkWinCondition = function() {
     let tempArr = [];
-    // check columns
+    // check rows
     for (let row=0; row<=2; row++){
       if (areAllThreeSame(board[row])) {
+        //console.log("row "+row+" was winner")
         return true;
       }
     }
-    // check rows
+    // check columns
     for (let col=0; col<=2; col++){
       tempArr = [board[0][col],board[1][col],board[2][col]];
       if (areAllThreeSame(tempArr)) {
+        //console.log("col "+col+" was winner")
         return true;
       }
     }
     // check diagonals
     tempArr = [board[0][0],board[1][1],board[2][2]]
     if (areAllThreeSame(tempArr)) {
+      //console.log("diag down was winner")
       return true;
     }
     tempArr = [board[2][0],board[1][1],board[0][2]]
     if (areAllThreeSame(tempArr)) {
+      //console.log("diag up was winner")
       return true;
+    }
+
+    // Check for tie
+    let count = 0;
+    for (let row=0; row<=2; row++) {
+      for (let col=0; col<=2; col++) {
+        if (board[row][col] == true || board[row][col] == false) {
+          count++;
+          if (count == 9) {
+            gameFlow
+          }
+        }
+      }
     }
 
     // Must be no winner
     return false;  
+  }
+
+  const resetBoard = function () {
+    board = [[null,null,null],[null,null,null],[null,null,null]];
+    lastmove = null;
+    render();
   }
 
   const areAllThreeSame = function (arr) {
@@ -125,21 +159,39 @@ gameBoard = (function() {
     }
   }
 
+  // renders the current game status
   const render = function() {
-    console.log("Rendering. Board: "+board[0]);
-    console.log("                  "+board[1]);
-    console.log("                  "+board[2]);
+    let divGameBoard = document.querySelector("#tic-tac-toe");
+    if (divGameBoard) {divGameBoard.remove()};
+    let tempDiv;
+    let tempImg;
+
+    divGameBoard = document.createElement("div");
+    divGameBoard.id = "tic-tac-toe";
+    for (let row=0; row<=2; row++) {
+      for (let col=0; col<=2; col++) {
+        tempDiv = document.createElement("div");
+        tempDiv.addEventListener("mousedown",() => addMove(row,col));
+        tempImg = document.createElement("img");
+        // Add X or O image
+        if (board[row][col] === true) {
+          tempImg.src = "./images/X.svg"
+          tempDiv.appendChild(tempImg);
+        } else if (board[row][col] === false) {
+          tempImg.src = "./images/O.svg"
+          tempDiv.appendChild(tempImg);
+        } 
+        divGameBoard.appendChild(tempDiv);
+      }
+      
+      mainDiv.appendChild(divGameBoard);
+    }
+    // highlights current players turn
+    // console.log("Rendering. Board: "+board[0]);
+    // console.log("                  "+board[1]);
+    // console.log("                  "+board[2]);
   };
 
-  const resetBoard = function () {
-    board = [[null,null,null],[null,null,null],[null,null,null]];
-    lastmove = null;
-  }
-
-
-  // renders the current game status
-    // highlights current players turn
-  // determines if move is legal
   return {addMove, resetBoard}
 })()
 
@@ -153,12 +205,12 @@ gameBoard = (function() {
 // Helper module
 //============================
 const helper = (function(){
-  const successArray = ["Nice move!","I like it!","I hope this works!",
-    "Wowzers!","Here goes nothing...","Could this be it?!","Great pick!",
+  const successArray = ["Nice move!","I like it!","I hope that works!",
+    "Wowzers!","There goes nothing...","Could this be it?!","Great pick!",
     "Incredible move!", "What foresight you have!","Majestic move!"];
   const failureArray = ["Try again.","That's not a legal move.",
-    "Try a different one.","You might want to think harder.", 
-    "That's not possible.", "Give it another go.", 
+    "Try a different move.","You might want to think harder.", 
+    "That's not a legit move.", "Give it another go.", 
     "Another go and you'll get it."];
   const gameOverArray = ["you've won!", "I knew you'd beat 'em!", 
     "that was a spectacular game!", "winner winner chicken dinner!"];
@@ -192,6 +244,3 @@ gameFlow.nextPlayer();
 console.log(gameBoard.addMove(0,1)); //true
 console.log(gameBoard.addMove(2,2)); //false
 console.log(gameBoard.addMove(2,2)); // --bad move
-console.log(gameBoard.addMove(1,1)); //true
-console.log(gameBoard.addMove(2,0)); //false
-console.log(gameBoard.addMove(2,1)); //true
