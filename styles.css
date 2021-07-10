@@ -37,7 +37,12 @@ main {
 }
 #resetBtn {
   grid-area: footer;
-  margin:auto;
+  margin: 0;
+  margin-top: 20px;
+  position: absolute;
+  left: 50%;
+  -ms-transform: translate(-50%, 0);
+  transform: translate(-50%, 0);
 }
 .XOBoxDiv{
   border: 2px solid black;

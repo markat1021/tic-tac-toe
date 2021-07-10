@@ -15,7 +15,7 @@ gameFlow = (function() {
   let playerTurn = null; //boolean true=player1
   let gameOverStatus = false; 
   let startedThisGame = null;
-  let isWinner = null; 
+  let turnNumber = 1;
 
   // get current player
   const currentPlayer = function () { 
@@ -27,15 +27,11 @@ gameFlow = (function() {
   }
   const gameOver = function (winnerStr) { 
     gameOverStatus = true; 
-    isWinner = winnerStr;
-    // if (typeStr == "win") {
-    //   lastGameResult = typeStr;
-    // }
   }
 
   const gameReset = function () { 
-    if (playerTurn == null) {playerTurn = true}; 
-    isWinner = null;
+    if (playerTurn == null) {playerTurn = true}; //initialize
+    gameFlow.turnNumber = 1;
     if (gameOverStatus) {
       startedThisGame = !startedThisGame;
       playerTurn = startedThisGame;
@@ -61,13 +57,18 @@ gameFlow = (function() {
   }
 
   const start = function(){
-    gameReset();
-    gameBoard.resetBoard();
+    //get player names!
+    var name1 = prompt("Please enter a name for Player 1", "Harry Potter");
+    var name2 = prompt("Please enter a name for Player 2", "Harry Potter");
+    player1 = createPlayer(name1 || "Player 1");
+    player2 = createPlayer(name2 || "Player 2");
+    gameReset()
     nextPlayer();
+
   }
 
   return { nextPlayer, currentPlayer, gameOver, gameReset, isGameOver,
-            getLastGameResult, start};
+            getLastGameResult, start, turnNumber};
 })();
 
 
@@ -78,6 +79,8 @@ gameBoard = (function() {
   let lastmove = null; //indicate if last move was success
   let board = [[null,null,null],[null,null,null],[null,null,null]]; 
 
+
+  //called when user clicks space board
   const addMove = function (rowInt, colInt) {
     let move = gameFlow.currentPlayer();
     let curr = board[rowInt][colInt];
@@ -87,6 +90,7 @@ gameBoard = (function() {
 
     // make the legal move
     if (curr === null) { 
+      gameFlow.turnNumber++;
       if (move) {
         player1.addComment(helper.getString("success"));
       } else {
@@ -94,25 +98,23 @@ gameBoard = (function() {
       }
       board[rowInt][colInt] = move;
       lastmove = true;
-      console.log(checkWinCondition())
       // check for win and end if so
       if (checkWinCondition() == "Win"){
         gameFlow.gameOver(move);
         if(move) {
           player1.addWin();
-          player1.addComment(helper.getString("gameOver"));
+          player1.addComment(player1.playerName+", "+helper.getString("gameOver"));
         } else {
           player2.addWin();
-          player2.addComment(helper.getString("gameOver"));
+          player2.addComment(player2.playerName+", "+helper.getString("gameOver"));
         }
         render();
-        console.log(move+", "+helper.getString("gameOver"));
-        return (move+", "+helper.getString("gameOver"));
       // else check if it was a tie
       } else if (checkWinCondition() == "Tie") {  
-        player1.addComment(helper.getString("tie"));
-        player2.addComment("");
         gameFlow.gameOver("Tie");
+        let tieStr = helper.getString("tie");
+        player1.addComment(tieStr);
+        player2.addComment(tieStr);
         render();
       // no winner yet, so next player
       } else {  
@@ -193,9 +195,6 @@ gameBoard = (function() {
 
   // renders the current game status
   const render = function() {
-    console.log(gameBoard);
-    console.log(gameFlow);
-
     // empty current board and recreate
     let divGame = document.querySelector("#divGame");
     if (divGame) {divGame.remove()};
@@ -212,39 +211,71 @@ gameBoard = (function() {
 
     let playerDivArr = [,divPlayer1,divPlayer2];
     let playerArr = [,player1,player2];
+    let tempImg;
+    
     for (let num = 1; num <= 2; num++) {
+      if (num == 1) {
+        tempImg = document.createElement("img");
+        tempImg.src = "./images/X.svg";
+      } else if (num == 2) {
+        tempImg = document.createElement("img");
+        tempImg.src = "./images/O.svg";
+      }
+      tempImg.style.height = "50px"
       let h2 = document.createElement("h2");
       let h3 = document.createElement("h3");
       let h4 = document.createElement("h4");
       h2.textContent = playerArr[num].playerName;
-      h3.textContent = "Wins: "+playerArr[num].wins;
-      h4.textContent = "";
-      if (gameFlow.currentPlayer() == false && num == 1) {
-        h4.textContent = player1.getComment();
-      } else if (gameFlow.currentPlayer() == true && num == 2) {
-        h4.textContent = player2.getComment();
+      //bold current player
+      if (gameFlow.currentPlayer() == true && num == 1) {
+        h2.textContent = "> "+playerArr[num].playerName+" <";
+      } else if (gameFlow.currentPlayer() == false && num == 2) {
+        h2.textContent = "> "+playerArr[num].playerName+" <";
       }
 
-      playerDivArr[num].append(h2, h3, h4);
+      h3.textContent = "Wins: "+playerArr[num].wins;
+      h4.textContent = "";
+      //show no comments on first turn
+      if (gameFlow.turnNumber == 1) { 
+      //show tie comment on both playerDivs  
+      } else if (gameFlow.turnNumber > 9) {
+        h4.textContent = player1.getComment();
+      //show winner text
+      } else if (gameFlow.isGameOver() == true) {
+        if (gameFlow.currentPlayer() == true && num == 1) {
+          h4.textContent = player1.playerName+", "+helper.getString("gameOver");
+        } else if (gameFlow.currentPlayer() == false && num == 2) {
+          h4.textContent = player2.playerName+", "+helper.getString("gameOver");
+        }
+      //show player comment for player who just attempted move
+      } else{
+        if (gameFlow.currentPlayer() == false && num == 1) {
+          h4.textContent = player1.getComment();
+        } else if (gameFlow.currentPlayer() == true && num == 2) {
+          h4.textContent = player2.getComment();
+        }
+      }
+
+      playerDivArr[num].append(tempImg, h2, h3, h4);
     }
 
+    // accent the current background
     let background1 = "rgb(229,229,241)";
-    let background2 = "radial-gradient(circle, rgba(229,229,241,1) 0%, rgba(242,242,242,1) 18%, rgba(255,255,255,1) 65%)";
+    let background2 = "radial-gradient(circle, rgba(229,229,241,1) 0%, rgba(242,242,242,1) 35%, rgba(255,255,255,1) 65%)";
     let fontWeight = 900;
     if (gameFlow.currentPlayer() == true) {
-      divPlayer1.style.background = background1;
-      divPlayer1.style.background = background2;
-      divPlayer1.style.fontWeight = fontWeight;
+      playerDivArr[1].style.background = background1;
+      playerDivArr[1].style.background = background2;
+      playerDivArr[1].style.fontWeight = fontWeight;
     } else if (gameFlow.currentPlayer() == false) {
-      divPlayer2.style.background = background1;
-      divPlayer2.style.background = background2;
-      divPlayer2.style.fontWeight = fontWeight;
+      playerDivArr[2].style.background = background1;
+      playerDivArr[2].style.background = background2;
+      playerDivArr[2].style.fontWeight = fontWeight;
     }
 
     // build the gameboard
     let divGameBoard = document.querySelector("#tic-tac-toe");
     let tempDiv;
-    let tempImg;
 
     divGameBoard = document.createElement("div");
     divGameBoard.id = "tic-tac-toe";
@@ -271,19 +302,19 @@ gameBoard = (function() {
     if (btn) {btn.remove()};
     btn = document.createElement("button");
     btn.id = "resetBtn";
-    btn.textContent="Reset";
     btn.addEventListener("mouseup", gameFlow.gameReset);
+    if (gameFlow.isGameOver()) {
+      btn.textContent="Start Next Game";
+    } else {
+      btn.textContent="Reset Board";
+    }
+    
 
 
 
     //add players and gameboard to the div
     divGame.append(playerDivArr[1],divGameBoard,playerDivArr[2])
     mainDiv.append(divGame,btn);
-  
-    // highlights current players turn
-    // console.log("Rendering. Board: "+board[0]);
-    // console.log("                  "+board[1]);
-    // console.log("                  "+board[2]);
 };
 
   return {addMove, resetBoard}
@@ -353,9 +384,4 @@ const helper = (function(){
 //============================
 // Execute code
 //============================
-player1 = createPlayer("Player 1");
-player2 = createPlayer("Murphy");
 gameFlow.start();
-// console.log(gameBoard.addMove(0,1)); //true
-// console.log(gameBoard.addMove(2,2)); //false
-// console.log(gameBoard.addMove(2,2)); // --bad move
