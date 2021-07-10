@@ -1,10 +1,44 @@
+header h1 {
+  text-align: center;
+}
+main {
+  margin: auto;
+}
+
+#divGame{
+  margin:auto;
+  display: grid;
+  grid-template-columns: 23vw 45vw 23vw;
+  grid-template-areas: "player1 gameboard player2"
+                        "footer footer footer";
+  justify-content: center;
+  align-items: top 30px;
+}
+
 #tic-tac-toe {
   display: grid;
-  grid-template-rows: 50px 50px 50px;
-  grid-template-columns: 50px 50px 50px;
+  grid-template-rows: 75px 75px 75px;
+  grid-template-columns: 75px 75px 75px;
+  justify-self: center;
 }
 #tic-tac-toe img {
-  height:40px;
-  width:40px;
+  height:65px;
+  width:65px;
   padding:5px;
+}
+.playerdiv {
+  text-align: center;
+}
+#player1div {
+  grid-area: player1;
+}
+#player2div{
+  grid-area: player2;
+}
+#resetBtn {
+  grid-area: footer;
+  margin:auto;
+}
+.XOBoxDiv{
+  border: 2px solid black;
 }
